@@ -10,8 +10,7 @@ echo -e "开始测速..."
 NOWIP=$(head -1 nowip_hosts.txt)
 
 /etc/init.d/passwall stop
-/etc/init.d/xray stop
-sleep 10 
+
 # 这里可以自己添加、修改 CloudflareST 的运行参数
 
 ./CloudflareST -url https://cfspeed1.kkiyomi.top/200mb.bin -tl 160 -tll 45 -o "result_hosts.txt"
@@ -50,7 +49,5 @@ while IFS= read -r line; do
 done < "$nowip_file"
 
 echo "替换完成"
-
 rm -rf result_hosts.txt
 /etc/init.d/passwall restart
-/etc/init.d/xray restart
