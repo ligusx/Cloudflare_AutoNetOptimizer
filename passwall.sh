@@ -2,7 +2,7 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 # --------------------------------------------------------------
-#	使用说明：加在openwrt上系统--计划任务里添加定时运行，如0 9 * * * bash /mnt/mmcblk2p4/CloudflareST/cfst-DNS.sh
+#	使用说明：加在openwrt上系统--计划任务里添加定时运行，如0 9 * * * ash /root/cfst-DNS.sh
 #	*解释：9点0分运行一次。
 # --------------------------------------------------------------
 
@@ -10,7 +10,7 @@ echo -e "开始测速..."
 NOWIP=$(head -1 nowip_hosts.txt)
 
 /etc/init.d/passwall stop
-
+sleep 10
 # 这里可以自己添加、修改 CloudflareST 的运行参数
 
 ./CloudflareST -url https://cfspeed1.kkiyomi.top/200mb.bin -tl 160 -tll 45 -o "result_hosts.txt"
@@ -50,4 +50,4 @@ done < "$nowip_file"
 
 echo "替换完成"
 rm -rf result_hosts.txt
-/etc/init.d/passwall restart
+/etc/init.d/passwall start
