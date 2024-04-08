@@ -2,7 +2,7 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 # --------------------------------------------------------------
-#	使用说明：加在openwrt上系统--计划任务里添加定时运行，如0 9 * * * ash /root/cfst-DNS.sh
+#	使用说明：加在openwrt上系统--计划任务里添加定时运行，如0 9 * * * ash /root/passwall.sh
 #	*解释：9点0分运行一次。
 # --------------------------------------------------------------
 
@@ -15,11 +15,13 @@ sleep 10
 
 ./CloudflareST -url https://cfspeed1.kkiyomi.top/200mb.bin -tl 160 -tll 45 -o "result_hosts.txt"
 
-[[ ! -e "result_hosts.txt" ]] && echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..." && exit 0
+[[ ! -e "result_hosts.txt" ]] && echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..."
 
 BESTIP=$(sed -n "2,1p" result_hosts.txt | awk -F, '{print $1}')
 if [[ -z "${BESTIP}" ]]; then
 	echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..."
+        /etc/init.d/passwall start
+        sleep 10
 	exit 0
 fi
 echo ${BESTIP} > nowip_hosts.txt
