@@ -18,7 +18,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -n 1000 -url https://st.1275905.xyz/ -tl 240 -tll 45 -o "result_hosts.txt"
+./CloudflareST -o "result_hosts.txt"
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result_hosts.txt" ]]
