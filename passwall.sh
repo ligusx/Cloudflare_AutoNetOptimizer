@@ -72,12 +72,9 @@ else
     
 # 检查并删除不需要的文件
     if [ -f "cfst_hosts.sh" ]; then
-       echo "删除 cfst_hosts.sh ..."
        rm -f "cfst_hosts.sh"
     fi
-
     if [ -f "使用+错误+反馈说明.txt" ]; then
-       echo "删除 使用+错误+反馈说明.txt ..."
        rm -f "使用+错误+反馈说明.txt"
     fi
     echo "下载并解压完成。"
@@ -85,9 +82,6 @@ else
     # 赋予执行权限（如果需要）
     chmod +x CloudflareST
 fi
-
-# 继续执行下面的命令
-echo "执行后续命令..."
 
 # 自动检测google是否连通，不连通则开始优选ip
 for i in {1..4}; do
@@ -110,17 +104,14 @@ NOWIP=$(head -1 nowip_hosts.txt)
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result_hosts.txt" ]]
-
 BESTIP=$(sed -n "2,1p" result_hosts.txt | awk -F, '{print $1}')
 if [[ -z "${BESTIP}" ]]; then
 	echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..."
 	/etc/init.d/passwall start
 	exit 0
 fi
-
 echo ${BESTIP} > nowip_hosts.txt
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
-
 echo -e "开始替换..."
 
 # 定义文件路径
