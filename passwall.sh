@@ -6,10 +6,98 @@ export PATH
 #	*解释：9点0分运行一次。
 # --------------------------------------------------------------
 
-echo -e "开始测速..."
-
 # cd到脚本所在位置
 cd `dirname $0`
+
+# 检查当前目录是否已经有CloudflareST文件
+if [ -f "CloudflareST" ]; then
+    echo "CloudflareST 已存在，跳过下载步骤。"
+else
+    # 获取系统的操作系统和架构信息
+    OS=$(uname -s)
+    ARCH=$(uname -m)
+
+    # 设置下载链接前缀和后缀
+    BASE_URL="https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download"
+    FILE_PREFIX="CloudflareST"
+    FILE_SUFFIX=".tar.gz"
+
+    # 根据操作系统和架构设置文件名
+    case "$OS" in
+        Linux)
+            if [ "$ARCH" == "x86_64" ]; then
+                FILE_NAME="${FILE_PREFIX}_linux_amd64${FILE_SUFFIX}"
+            elif [ "$ARCH" == "aarch64" ]; then
+                FILE_NAME="${FILE_PREFIX}_linux_arm64${FILE_SUFFIX}"
+            else
+                echo "不支持的架构: $ARCH"
+                exit 1
+            fi
+            ;;
+        Darwin)
+            if [ "$ARCH" == "x86_64" ]; then
+                FILE_NAME="${FILE_PREFIX}_darwin_amd64${FILE_SUFFIX}"
+            elif [ "$ARCH" == "arm64" ]; then
+                FILE_NAME="${FILE_PREFIX}_darwin_arm64${FILE_SUFFIX}"
+            else
+                echo "不支持的架构: $ARCH"
+                exit 1
+            fi
+            ;;
+        *)
+            echo "不支持的操作系统: $OS"
+            exit 1
+            ;;
+    esac
+
+    # 生成完整的下载链接
+    DOWNLOAD_URL="${BASE_URL}/${FILE_NAME}"
+
+    # 下载文件
+    echo "正在下载 ${DOWNLOAD_URL} ..."
+    curl -L -o "${FILE_NAME}" "${DOWNLOAD_URL}"
+
+    # 检查下载是否成功
+    if [ $? -ne 0 ]; then
+        echo "下载失败，请检查网络连接或下载链接。"
+        exit 1
+    fi
+
+    # 解压文件
+    echo "正在解压 ${FILE_NAME} ..."
+    tar -xzf "${FILE_NAME}"
+
+    # 删除压缩包
+    rm "${FILE_NAME}"
+    
+# 检查并删除不需要的文件
+    if [ -f "cfst_hosts.sh" ]; then
+       echo "删除 cfst_hosts.sh ..."
+       rm -f "cfst_hosts.sh"
+    fi
+
+    if [ -f "使用+错误+反馈说明.txt" ]; then
+       echo "删除 使用+错误+反馈说明.txt ..."
+       rm -f "使用+错误+反馈说明.txt"
+    fi
+    echo "下载并解压完成。"
+
+    # 赋予执行权限（如果需要）
+    chmod +x CloudflareST
+fi
+
+# 继续执行下面的命令
+echo "执行后续命令..."
+
+# 自动检测google是否连通，不连通则开始优选ip
+for i in {1..4}; do
+    status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 https://www.google.com)
+    if [ $status -eq 200 ]; then
+        echo "HTTP 状态码为 200，退出"
+        break
+    else
+    
+echo -e "开始测速..."
 
 # 检测是否有特定文件
 NOWIP=$(head -1 nowip_hosts.txt)
@@ -18,7 +106,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -o "result_hosts.txt"
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45 -o "result_hosts.txt"
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result_hosts.txt" ]]
@@ -54,7 +142,7 @@ fi
 while IFS= read -r line; do
 
 # 替换/etc/config/passwall文件中的option address字段中的引号中的文本
-    sed -i "s/option address '.*'/option address '$line'/" "$passwall_file"
+sed -i "s/option address '.*'/option address '$line'/" "$passwall_file"
 done < "$nowip_file"
 
 echo "替换完成"
@@ -62,3 +150,7 @@ echo "替换完成"
 # 删除测速结果文件并启动passwall
 rm -rf result_hosts.txt
 /etc/init.d/passwall start
+
+# 自动检测google是否连通，不连通则开始优选ip结尾
+    fi
+done
