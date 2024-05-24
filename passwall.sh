@@ -84,7 +84,7 @@ else
 fi
 
 # 自动检测google是否连通，不连通则开始优选ip
-for i in {1..4}; do
+for i in {1..5}; do
     status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 https://www.google.com)
     if [ $status -eq 200 ]; then
         echo "HTTP 状态码为 200，退出"
