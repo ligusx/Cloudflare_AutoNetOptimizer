@@ -6,6 +6,15 @@ export PATH
 #	*解释：每5分运行一次。
 # --------------------------------------------------------------
 
+# 检查是否已经安装了 tar
+if command -v tar > /dev/null 2>&1; then
+    echo "tar 已经安装，跳过安装步骤。"
+else
+    echo "tar 未安装，正在安装..."
+    opkg update
+    opkg install tar
+fi
+
 # cd到脚本所在位置
 cd `dirname $0`
 
