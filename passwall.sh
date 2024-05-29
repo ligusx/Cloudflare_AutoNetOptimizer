@@ -63,9 +63,9 @@ else
     DOWNLOAD_URL="${BASE_URL}/${FILE_NAME}"
 
     # 下载文件
-    echo "正在下载 ${DOWNLOAD_URL} ..."
-    curl -L -o "${FILE_NAME}" "${DOWNLOAD_URL}"
-
+    echo "正在下载CloudflareST..."
+    curl -sS -L -o "${FILE_NAME}" "${DOWNLOAD_URL}"
+    
     # 检查下载是否成功
     if [ $? -ne 0 ]; then
         echo "下载失败，请检查网络连接或下载链接。"
