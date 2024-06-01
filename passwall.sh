@@ -6,14 +6,26 @@ export PATH
 #	*解释：每5分运行一次。
 # --------------------------------------------------------------
 
-# 检查是否已经安装了 tar
-if command -v tar > /dev/null 2>&1; then
-    echo "tar 已经安装，跳过安装步骤。"
-else
-    echo "tar 未安装，正在安装..."
-    opkg update
-    opkg install tar
+# 定义目标文件夹
+target_dir="/etc/auto-ip"
+
+# 检查目标文件夹是否存在
+if [ ! -d "$target_dir" ]; then
+    # 如果不存在，创建文件夹
+    mkdir -p "$target_dir"
 fi
+
+# 检查文件夹是否为空
+if [ -z "$(ls -A "$target_dir")" ]; then
+    # 如果为空，复制自身到目标文件夹
+    cp "$0" "$target_dir"
+    echo "已复制"
+else
+# 如果不为空，提示跳过
+    echo "已有文件"
+fi
+    # 文件夹赋权
+    chmod -R +x "$target_dir"
 
 # cd到脚本所在位置
 cd `dirname $0`
@@ -71,6 +83,15 @@ else
         echo "下载失败，请检查网络连接或下载链接。"
         exit 1
     fi
+    
+# 检查是否已经安装了 tar
+if command -v tar > /dev/null 2>&1; then
+    echo "tar 已经安装，跳过安装步骤。"
+else
+    echo "tar 未安装，正在安装..."
+    opkg update
+    opkg install tar
+fi
 
     # 解压文件
     echo "正在解压 ${FILE_NAME} ..."
