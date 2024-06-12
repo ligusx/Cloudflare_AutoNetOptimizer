@@ -114,13 +114,20 @@ fi
 fi
 
 # 自动检测google是否连通，不连通则开始优选ip
-for i in {1..5}; do
-    status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 https://www.google.com)
-    if [ $status -eq 200 ]; then
-        echo "HTTP 状态码为 200，退出"
-        break
-    else
-    
+
+# 尝试ping google.com 6次，并计算成功次数
+success_count=$(ping -c 6 google.com | grep -c 'bytes from')
+
+# 检查成功的次数，如果大于等于3次，则退出
+if [ "$success_count" -ge 3 ]; then
+    echo "Google连通，退出"
+    exit 0
+# 如果失败的次数大于等于3次，则继续运行下面的命令
+elif [ "$success_count" -lt 2 ]; then
+    echo "Google不连通，即将开始优选IP"
+fi
+# 继续执行下面的命令
+
 echo -e "开始测速..."
 
 # 检测是否有特定文件
@@ -130,7 +137,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -o "result_hosts.txt"
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45 -o "result_hosts.txt"
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result_hosts.txt" ]]
@@ -171,7 +178,3 @@ echo "替换完成"
 # 删除测速结果文件并启动passwall
 rm -rf result_hosts.txt
 /etc/init.d/passwall start
-
-# 自动检测google是否连通，不连通则开始优选ip结尾
-    fi
-done
