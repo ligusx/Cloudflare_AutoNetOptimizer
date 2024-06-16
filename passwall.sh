@@ -1,4 +1,4 @@
--cfcolo HKG,KHH,NRT,#!/bin/bash
+#!/bin/bash
 
 # 定义目标文件夹
 target_dir="/etc/auto-ip"
@@ -27,7 +27,7 @@ fi
 
 # 添加定时任务
 # 设定要添加的crontab任务
-new_task="*/5 * * * * ash /etc/auto-ip/cf"
+new_task="*/5 * * * * ash /etc/auto-ip/passwall.sh"
 
 # 检查新任务是否已经存在于crontab中
 if ! crontab -l | grep -Fxq "$new_task"; then
@@ -139,7 +139,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45
+./CloudflareST 
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
@@ -208,7 +208,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45
+./CloudflareST 
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
