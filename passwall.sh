@@ -1,4 +1,4 @@
-#!/bin/bash
+-cfcolo HKG,KHH,NRT,#!/bin/bash
 
 # 定义目标文件夹
 target_dir="/etc/auto-ip"
@@ -18,19 +18,33 @@ if [ -z "$(ls -A "$target_dir")" ]; then
     echo "已复制"
 else
 
+# 文件夹赋权
+    chmod -R +x "$target_dir"
+    
 # 如果不为空，提示跳过
     echo "已有文件"
 fi
 
-# 文件夹赋权
-    chmod -R +x "$target_dir"
+# 添加定时任务
+# 设定要添加的crontab任务
+new_task="*/5 * * * * ash /etc/auto-ip/cf"
+
+# 检查新任务是否已经存在于crontab中
+if ! crontab -l | grep -Fxq "$new_task"; then
+# 如果不存在，则添加新任务到crontab
+    echo "已添加定时任务"
+    (crontab -l 2>/dev/null || true) | { cat; echo "$new_task"; } | crontab -
+else
+# 如果存在，则输出提示信息
+    echo "已有相同定时任务，跳过"
+fi
 
 # cd到脚本所在位置
     cd `dirname $0`
 
 # 检查当前目录是否已经有CloudflareST文件
 if [ -f "CloudflareST" ]; then
-    echo "CloudflareST 已存在，跳过下载步骤。"
+    echo "CloudflareST 已存在，跳过下载"
 else
 
 # 获取系统的操作系统和架构信息
@@ -107,18 +121,14 @@ fi
        rm -f "使用+错误+反馈说明.txt"
     fi
     echo "下载并解压完成。"
-
-# 赋予执行权限（如果需要）
-    chmod +x CloudflareST
 fi
 
 #选择性执行
-
-    echo "手动优选ip请按任意键"
+    echo "手动优选IP请按任意键"
 
 # 使用read命令读取输入，并设置超时时间为5秒
 if read -t 5 -n 1; then
-    echo "开始手动优选ip"
+    echo "开始手动优选IP"
 
     echo -e "开始测速..."
 
@@ -129,11 +139,11 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -o "result_hosts.txt"
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
-[[ ! -e "result_hosts.txt" ]]
-BESTIP=$(sed -n "2,1p" result_hosts.txt | awk -F, '{print $1}')
+[[ ! -e "result.csv" ]]
+BESTIP=$(sed -n "2,1p" result.csv | awk -F, '{print $1}')
 if [[ -z "${BESTIP}" ]]; then
 	echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..."
 	/etc/init.d/passwall start
@@ -168,7 +178,7 @@ done < "$nowip_file"
 echo "替换完成"
 
 # 删除测速结果文件并启动passwall
-rm -rf result_hosts.txt
+rm -rf result.csv
 /etc/init.d/passwall start
 exit 0
 else
@@ -187,8 +197,8 @@ if [ "$success_count" -ge 3 ]; then
 elif [ "$success_count" -lt 2 ]; then
     echo "Google不连通，即将开始优选IP"
 fi
-# 继续执行下面的命令
 
+# 继续执行下面的命令
 echo -e "开始测速..."
 
 # 检测是否有特定文件
@@ -198,11 +208,11 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -o "result_hosts.txt"
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 13 -tl 240 -tll 45
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
-[[ ! -e "result_hosts.txt" ]]
-BESTIP=$(sed -n "2,1p" result_hosts.txt | awk -F, '{print $1}')
+[[ ! -e "result.csv" ]]
+BESTIP=$(sed -n "2,1p" result.csv | awk -F, '{print $1}')
 if [[ -z "${BESTIP}" ]]; then
 	echo "CloudflareST 测速结果 IP 数量为 0，跳过下面步骤..."
 	/etc/init.d/passwall start
@@ -237,6 +247,6 @@ done < "$nowip_file"
    echo "替换完成"
 
 # 删除测速结果文件并启动passwall
-rm -rf result_hosts.txt
+rm -rf result.csv
 /etc/init.d/passwall start
 fi
