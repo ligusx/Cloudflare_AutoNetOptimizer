@@ -142,7 +142,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45
+./CloudflareST 
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
@@ -215,7 +215,7 @@ NOWIP=$(head -1 nowip_hosts.txt)
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45
+./CloudflareST 
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
