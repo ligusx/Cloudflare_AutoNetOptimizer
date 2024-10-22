@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 定义目标文件夹
-target_dir="/etc/auto-ip"
+target_dir="/etc/ip"
 
 # 检查目标文件夹是否存在
 if [ ! -d "$target_dir" ]; then
@@ -27,7 +27,7 @@ fi
 
 # 添加定时任务
 # 设定要添加的crontab任务
-new_task="*/5 * * * * ash /etc/auto-ip/passwall.sh"
+new_task="*/10 * * * * ash /etc/ip/cf"
 
 # 检查新任务是否已经存在于crontab中
 if ! crontab -l | grep -Fxq "$new_task"; then
@@ -36,7 +36,7 @@ if ! crontab -l | grep -Fxq "$new_task"; then
     (crontab -l 2>/dev/null || true) | { cat; echo "$new_task"; } | crontab -
 else
 # 如果存在，则输出提示信息
-    echo "已有相同定时任务，跳过"
+    echo "已有相同定时任务"
 fi
 
 # cd到脚本所在位置
@@ -44,7 +44,7 @@ fi
 
 # 检查当前目录是否已经有CloudflareST文件
 if [ -f "CloudflareST" ]; then
-    echo "CloudflareST 已存在，跳过下载"
+    echo "CloudflareST 已存在"
 else
 
 # 获取系统的操作系统和架构信息
@@ -99,7 +99,7 @@ else
     
 # 检查是否已经安装了 tar
 if command -v tar > /dev/null 2>&1; then
-    echo "tar 已经安装，跳过安装步骤。"
+    echo "tar 已经安装"
 else
     echo "tar 未安装，正在安装..."
     opkg update
@@ -123,23 +123,26 @@ fi
     echo "下载并解压完成。"
 fi
 
-#选择性执行
-    echo "手动优选IP请按任意键"
-
 # 使用read命令读取输入，并设置超时时间为5秒
+   echo "手动优选IP请按任意键"
 if read -t 5 -n 1; then
     echo "开始手动优选IP"
 
     echo -e "开始测速..."
+    
 
 # 检测是否有特定文件
+if [ ! -f "nowip_hosts.txt" ]; then
+    touch nowip_hosts.txt
+fi
+
 NOWIP=$(head -1 nowip_hosts.txt)
 
 # 停止passwall
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST 
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
@@ -202,13 +205,17 @@ fi
 echo -e "开始测速..."
 
 # 检测是否有特定文件
+if [ ! -f "nowip_hosts.txt" ]; then
+    touch nowip_hosts.txt
+fi
+
 NOWIP=$(head -1 nowip_hosts.txt)
 
 # 停止passwall
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST 
+./CloudflareST -n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
