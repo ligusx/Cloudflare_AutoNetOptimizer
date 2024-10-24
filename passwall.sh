@@ -1,7 +1,28 @@
 #!/bin/bash
 
+# 定义测速参数
+cstconfig="-n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45"
+
+# 检测国外连接参数
+word="google.com"
+
+# 检测国内连接参数
+home="baidu.com"
+
+# 检测节点是否在线
+JDURL="https://1275905.xyz"
+
+# 设定要添加的crontab任务
+new_task="*/10 * * * * ash /etc/ip/cf"
+
 # 定义目标文件夹
 target_dir="/etc/ip"
+
+# 定义文件路径
+nowip_file="nowip_hosts.txt"
+
+# 定义passwall配置文件
+passwall_file="/etc/config/passwall"
 
 # 检查目标文件夹是否存在
 if [ ! -d "$target_dir" ]; then
@@ -24,10 +45,6 @@ else
 # 如果不为空，提示跳过
     echo "已有文件"
 fi
-
-# 添加定时任务
-# 设定要添加的crontab任务
-new_task="*/10 * * * * ash /etc/ip/cf"
 
 # 检查新任务是否已经存在于crontab中
 if ! crontab -l | grep -Fxq "$new_task"; then
@@ -93,7 +110,7 @@ else
     
 # 检查下载是否成功
     if [ $? -ne 0 ]; then
-        echo "下载失败，请检查网络连接或下载链接。"
+        echo "下载失败 请检查网络连接或下载链接。"
         exit 1
     fi
     
@@ -101,7 +118,7 @@ else
 if command -v tar > /dev/null 2>&1; then
     echo "tar 已经安装"
 else
-    echo "tar 未安装，正在安装..."
+    echo "tar 未安装 正在安装..."
     opkg update
     opkg install tar
 fi
@@ -120,7 +137,47 @@ fi
     if [ -f "使用+错误+反馈说明.txt" ]; then
        rm -f "使用+错误+反馈说明.txt"
     fi
-    echo "下载并解压完成。"
+    echo "下载并解压完成"
+fi
+
+# 检查PassWall配置文件中是否启用了PassWall
+if [ -f $passwall_file ] && grep -q "option enabled '0'" $passwall_file; then
+    # 如果passwall未启用 则退出
+    echo "passwall未启用 退出脚本"
+    exit 1
+fi
+
+echo "passwall已启用"
+
+# 使用ps命令检查passwall进程是否存在
+if ! ps | grep -v grep | grep -q "passwall"; then
+    echo "passwall服务未运行 退出脚本"
+    exit 1
+else
+    echo "passwall服务正在运行"
+fi
+
+# 尝试ping baidu.com 6次，并计算成功次数
+success_count=$(ping -c 6 $home | grep -c 'bytes from')
+
+# 检查成功的次数，如果失败大于等于3次，则退出
+if [ "$success_count" -lt 2 ]; then
+    echo "国内网络异常 退出"
+    exit 0
+# 如果成功的次数大于等于3次，则继续运行下面的命令
+elif [ "$success_count" -ge 3 ]; then
+    echo "国内网络正常"
+fi
+
+# 使用curl获取HTTP状态码
+HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" -- "$JDURL")
+
+# 检查状态码是否为200
+if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "302" ]; then
+    echo "节点离线 退出 当前状态码为:$HTTP_CODE"
+    exit 1
+else
+    echo "节点在线"
 fi
 
 # 使用read命令读取输入，并设置超时时间为5秒
@@ -128,21 +185,18 @@ fi
 if read -t 5 -n 1; then
     echo "开始手动优选IP"
 
-    echo -e "开始测速..."
-    
-
 # 检测是否有特定文件
-if [ ! -f "nowip_hosts.txt" ]; then
-    touch nowip_hosts.txt
+if [ ! -f "$nowip_file" ]; then
+    touch $nowip_file
 fi
 
-NOWIP=$(head -1 nowip_hosts.txt)
+NOWIP=$(head -1 $nowip_file)
 
 # 停止passwall
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST 
+./CloudflareST $cstconfig
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
@@ -152,13 +206,9 @@ if [[ -z "${BESTIP}" ]]; then
 	/etc/init.d/passwall start
 	exit 0
 fi
-echo ${BESTIP} > nowip_hosts.txt
+echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
-
-# 定义文件路径
-nowip_file="nowip_hosts.txt"
-passwall_file="/etc/config/passwall"
 
 # 检查文件是否存在
 if [ ! -f "$nowip_file" ]; then
@@ -190,32 +240,31 @@ else
 # 自动检测google是否连通，不连通则开始优选ip
 
 # 尝试ping google.com 6次，并计算成功次数
-success_count=$(ping -c 6 google.com | grep -c 'bytes from')
+success_count=$(ping -c 6 $word | grep -c 'bytes from')
 
 # 检查成功的次数，如果大于等于3次，则退出
 if [ "$success_count" -ge 3 ]; then
-    echo "Google连通，退出"
+    echo "国外网络正常 退出"
     exit 0
 # 如果失败的次数大于等于3次，则继续运行下面的命令
 elif [ "$success_count" -lt 2 ]; then
-    echo "Google不连通，即将开始优选IP"
+    echo "国外网络异常 即将开始优选IP"
 fi
 
-# 继续执行下面的命令
-echo -e "开始测速..."
+echo  "开始测速..."
 
 # 检测是否有特定文件
-if [ ! -f "nowip_hosts.txt" ]; then
-    touch nowip_hosts.txt
+if [ ! -f "$nowip_file" ]; then
+    touch $nowip_file
 fi
 
-NOWIP=$(head -1 nowip_hosts.txt)
+NOWIP=$(head -1 $nowip_file)
 
 # 停止passwall
 /etc/init.d/passwall stop
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-./CloudflareST 
+./CloudflareST $cstconfig
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
 [[ ! -e "result.csv" ]]
@@ -225,13 +274,9 @@ if [[ -z "${BESTIP}" ]]; then
 	/etc/init.d/passwall start
 	exit 0
 fi
-echo ${BESTIP} > nowip_hosts.txt
+echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
-
-# 定义文件路径
-nowip_file="nowip_hosts.txt"
-passwall_file="/etc/config/passwall"
 
 # 检查文件是否存在
 if [ ! -f "$nowip_file" ]; then
