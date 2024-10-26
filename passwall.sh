@@ -7,8 +7,8 @@ script_name=$(basename "$script_path")
 
 #########可修改区开始#########
 
-# 定义测速参数
-cstconfig="你的CloudflareST测速参数"
+# 这里可以自己添加、修改 CloudflareST 的运行参数
+cstconfig=""
 # 检测国外连接参数
 word="google.com"
 # 检测国内连接参数
@@ -57,19 +57,14 @@ else
 
 # 文件夹赋权
 chmod -R +x "$target_dir"
-    
-# 如果不为空，提示跳过
-echo "已有文件" > $NULL
 fi
 
 # 检查新任务是否已经存在于crontab中
 if ! crontab -l | grep -Fxq "$new_task"; then
+
 # 如果不存在，则添加新任务到crontab
 echo "已添加定时任务"
 (crontab -l 2>$NULL || true) | { cat; echo "$new_task"; } | crontab -
-else
-# 如果存在，则输出提示信息
-echo "已有相同定时任务" > $NULL
 fi
 
 # cd到指定目录
@@ -77,7 +72,7 @@ cd $target_dir
 
 # 检查当前目录是否已经有CloudflareST文件
 if [ -f "CloudflareST" ]; then
-echo "CloudflareST 已存在" > $NULL
+ : 
 else
 
 # 获取系统的操作系统和架构信息
@@ -167,8 +162,6 @@ fi
 if ! ps | grep -v grep | grep -q "passwall"; then
 echo "passwall服务未运行 退出脚本"
 exit 1
-else
-echo "passwall服务正在运行" > $NULL
 fi
 
 # 尝试ping baidu.com 6次，并计算成功次数
@@ -209,7 +202,6 @@ NOWIP=$(head -1 $nowip_file)
 # 停止passwall
 $STOP
 
-# 这里可以自己添加、修改 CloudflareST 的运行参数
 ./CloudflareST $cstconfig
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
