@@ -1,41 +1,33 @@
 #!/bin/sh
 
-#丢弃数据定义
-NULL="/dev/null"
-
-# 定义测速参数
-cstconfig="-n 700 -url https://st.1275905.xyz/ -sl 40 -tl 240 -tll 45"
-
-# 检测国外连接参数
-word="google.com"
-
-# 检测国内连接参数
-home="baidu.com"
-
-# 检测节点是否在线
-JDURL="1275905.xyz"
-
-# 定义目标文件夹
-target_dir="/etc/ip"
-
 # 获取当前脚本的完整路径
 script_path="$0"
-
 # 使用basename命令获取不带路径的脚本文件名
 script_name=$(basename "$script_path")
 
-# 设定要添加的crontab任务
-new_task="*/5 * * * * sh $target_dir/$script_name"
-
+#########可修改区开始########
+#丢弃数据定义
+NULL="/dev/null"
+# 定义测速参数
+cstconfig="-n 700 -sl 40 -tl 240 -tll 45"
+# 检测国外连接参数
+word="google.com"
+# 检测国内连接参数
+home="baidu.com"
+# 检测节点是否在线
+JDURL=""
+# 定义目标文件夹
+target_dir="/etc/ip"
 # 定义文件路径
 nowip_file="nowip_hosts.txt"
-
 # 定义passwall配置文件
 passwall_file="/etc/config/passwall"
-
 # passwall启动/停止命令定义
 START="/etc/init.d/passwall start"
 STOP="/etc/init.d/passwall stop"
+# 设定要添加的crontab任务
+new_task="*/5 * * * * sh $target_dir/$script_name"
+########可修改区结束#######
 
 # 检查目标文件夹是否存在
 if [ ! -d "$target_dir" ]; then
