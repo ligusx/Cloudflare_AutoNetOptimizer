@@ -183,7 +183,7 @@ failure_count=0
 
 for i in $(seq 1$max_attempts); do
 # 执行curl命令，获取HTTP状态码
-status_code=$(curl -o /dev/null -s -w "%{http_code}" -m 1 -- "$JDURL")
+status_code=$(curl -o $NULL -s -w "%{http_code}" -m 1 -- "$JDURL")
     
 # 检查状态码是否不是200
 if [ "$status_code" != "200" ]; then
