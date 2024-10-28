@@ -1,10 +1,5 @@
 #!/bin/sh
 
-# 获取当前脚本的完整路径
-script_path="$0"
-# 使用basename命令获取不带路径的脚本文件名
-script_name=$(basename "$script_path")
-
 #########可修改区开始#########
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
@@ -36,6 +31,9 @@ passwall_file="/etc/config/passwall"
 # passwall启动/停止命令定义
 START="/etc/init.d/passwall start"
 STOP="/etc/init.d/passwall stop"
+
+# 使用basename命令获取不带路径的脚本文件名
+script_name=$(basename "$0")
 
 # 设定要添加的crontab任务
 new_task="$task $sh $target_dir/$script_name"
@@ -176,16 +174,29 @@ elif [ "$ping_home" -ge 3 ]; then
 echo "国内网络正常"
 fi
 
-# 使用curl获取HTTP状态码
-HTTP_CODE=$(curl -o $NULL -s -w "%{http_code}" -m 3 -- "$JDURL")
+# 测试次数
+max_attempts=5
+# 允许非200状态码的最大次数
+max_failures=3
+# 当前非200状态码的次数
+failure_count=0
 
-# 检查状态码是否为200
-if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "302" ]; then
-echo "节点离线 退出 当前状态码为:$HTTP_CODE"
-exit 1
-else
-echo "节点在线"
+for i in $(seq 1$max_attempts); do
+# 执行curl命令，获取HTTP状态码
+status_code=$(curl -o /dev/null -s -w "%{http_code}" -m 1 -- "$JDURL")
+    
+# 检查状态码是否不是200
+if [ "$status_code" != "200" ]; then
+# 增加非200状态码的计数
+failure_count=$((failure_count+1))
 fi
+# 如果非200状态码的次数超过最大允许次数，则退出
+if [ $failure_count -gt $max_failures ]; then
+echo "节点离线 退出"
+exit 1
+fi
+done
+echo "节点在线"
 
 # 使用read命令读取输入，并设置超时时间为5秒
 echo "手动优选IP请按任意键"
@@ -231,7 +242,8 @@ fi
 while IFS= read -r line; do
 
 # 替换/etc/config/passwall文件中的option address字段中的引号中的文本
-sed -i "s/option address '.*'/option address '$line'/" "$passwall_file"
+sed=$(sed -i "s/option address '.*'/option address '$line'/" "$passwall_file")
+$sed
 done < "$nowip_file"
 echo "替换完成"
 
@@ -269,7 +281,6 @@ NOWIP=$(head -1 $nowip_file)
 # 停止passwall
 $STOP
 
-# 这里可以自己添加、修改 CloudflareST 的运行参数
 ./CloudflareST $cstconfig
 
 # 检测测速结果文件，没有数据会重启passwall并退出脚本
@@ -299,7 +310,7 @@ fi
 while IFS= read -r line; do
 
 # 替换/etc/config/passwall文件中的option address字段中的引号中的文本
-sed -i "s/option address '.*'/option address '$line'/" "$passwall_file"
+$sed
 done < "$nowip_file"
 echo "替换完成"
 
@@ -307,3 +318,4 @@ echo "替换完成"
 rm -rf result.csv
 $START
 fi
+done
