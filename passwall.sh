@@ -3,7 +3,7 @@
 #########可修改区开始#########
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-cstconfig=""
+cstconfig=" "
 # 检测国外连接参数
 word="google.com"
 # 检测国内连接参数
@@ -310,6 +310,7 @@ fi
 while IFS= read -r line; do
 
 # 替换/etc/config/passwall文件中的option address字段中的引号中的文本
+sed=$(sed -i "s/option address '.*'/option address '$line'/" "$passwall_file")
 $sed
 done < "$nowip_file"
 echo "替换完成"
@@ -318,4 +319,3 @@ echo "替换完成"
 rm -rf result.csv
 $START
 fi
-done
