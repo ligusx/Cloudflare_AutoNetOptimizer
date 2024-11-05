@@ -5,7 +5,7 @@
 # 这里可以自己添加、修改 CloudflareST 的运行参数
 cstconfig=" "
 # 检测国外连接参数
-word="google.com"
+word="x.com"
 # 检测国内连接参数
 home="baidu.com"
 # 检测节点是否在线
@@ -15,7 +15,7 @@ target_dir="/etc/ip"
 # 定义文件路径
 nowip_file="nowip_hosts.txt"
 #定时修改
-task="*/5 * * * *"
+task="*/10 * * * *"
 
 ##########可修改区结束########
 
@@ -175,7 +175,7 @@ echo "国内网络正常"
 fi
 
 # 测试次数
-max_attempts=5
+max_attempts=6
 # 允许非200状态码的最大次数
 max_failures=3
 # 当前非200状态码的次数
@@ -183,10 +183,10 @@ failure_count=0
 
 for i in $(seq 1$max_attempts); do
 # 执行curl命令，获取HTTP状态码
-status_code=$(curl -o $NULL -s -w "%{http_code}" -m 1 -- "$JDURL")
+status_code=$(curl -o $NULL -s -w "%{http_code}" -- "$JDURL")
     
 # 检查状态码是否不是200
-if [ "$status_code" != "200" ]; then
+if [ "$status_code" != "200" ]&&[ "$status_code" != "301" ]; then
 # 增加非200状态码的计数
 failure_count=$((failure_count+1))
 fi
@@ -257,17 +257,30 @@ echo "开始自动流程"
 
 # 自动检测google是否连通，不连通则开始优选ip
 
-# 尝试ping google.com 6次，并计算成功次数
-ping_word=$(ping -c 6 $word 2>$NULL | grep -c 'bytes from')
+# 设置最大尝试次数
+MAX_ATTEMPTS=3
 
-# 检查成功的次数，如果大于等于3次，则退出
-if [ "$ping_word" -ge 3 ]; then
+# 初始化尝试次数
+attempt_word=0
+
+# 循环尝试请求
+while [ $attempt_word -lt $MAX_ATTEMPTS ]; do
+# 使用curl获取状态码
+STATUS_CODE_WORD=$(curl -o $NULL -s -m 10 -w '%{http_code}' "$word")
+    
+# 检查状态码是否为200或301
+if [ "$STATUS_CODE_WORD" -eq 200 ] || [ "$STATUS_CODE_WORD" -eq 301 ]; then
 echo "国外网络正常 退出"
 exit 0
-# 如果失败的次数大于等于3次，则继续运行下面的命令
-elif [ "$ping_word" -lt 2 ]; then
-echo "国外网络异常 即将开始优选IP"
+else
+sleep 1
 fi
+# 增加尝试次数
+attempt_word=$((attempt_word+1))
+done
+# 如果达到最大尝试次数仍未满足条件，则优选
+
+echo "国外网络异常 开始优选IP"
 
 echo  "开始测速..."
 
