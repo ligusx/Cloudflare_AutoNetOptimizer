@@ -3,9 +3,9 @@
 #########可修改区开始#########
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-cstconfig=" "
+cstconfig=""
 # 检测国外连接参数
-word="x.com"
+word="google.com"
 # 检测国内连接参数
 home="baidu.com"
 # 检测节点是否在线
