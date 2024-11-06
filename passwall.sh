@@ -227,17 +227,6 @@ echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
 
-# 检查文件是否存在
-if [ ! -f "$nowip_file" ]; then
-echo "Error: $nowip_file 文件不存在"
-exit 1
-fi
-
-if [ ! -f "$passwall_file" ]; then
-echo "Error: $passwall_file 文件不存在"
-exit 1
-fi
-
 # 读取nowip_hosts.txt文件中的内容并处理
 while IFS= read -r line; do
 
@@ -307,17 +296,6 @@ fi
 echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
-
-# 检查文件是否存在
-if [ ! -f "$nowip_file" ]; then
-echo "Error: $nowip_file 文件不存在"
-exit 1
-fi
-
-if [ ! -f "$passwall_file" ]; then
-echo "Error: $passwall_file 文件不存在"
-exit 1
-fi
 
 # 读取nowip_hosts.txt文件中的内容并处理
 while IFS= read -r line; do
