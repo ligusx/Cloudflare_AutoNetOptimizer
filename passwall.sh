@@ -16,6 +16,8 @@ target_dir="/etc/ip"
 nowip_file="nowip_hosts.txt"
 #定时修改
 task="*/10 * * * *"
+#passwall中节点名称关键字
+KEYWORD=""
 
 ##########可修改区结束########
 
@@ -24,6 +26,9 @@ sh="sh"
 
 #丢弃数据定义
 NULL="/dev/null"
+
+# 创建临时文件
+temp_config=$(mktemp)
 
 # 定义passwall配置文件
 passwall_file="/etc/config/passwall"
@@ -227,13 +232,41 @@ echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
 
-# 读取nowip_hosts.txt文件中的内容并处理
+# 读取/etc/config/passwall文件并处理
 while IFS= read -r line; do
+# 检测到config nodes模块
+if echo "$line" | grep -q '^config nodes'; then
+in_nodes_section=true
+elif [ "$in_nodes_section" = true ] && echo "$line" | grep -q '^config'; then
+in_nodes_section=false
+fi
 
-# 替换/etc/config/passwall文件中的option address字段中的引号中的文本
-sed=$(sed -i "s/option address '.*'/option address '$line'/" "$passwall_file")
-$sed
-done < "$nowip_file"
+# 如果在config nodes模块内
+if [ "$in_nodes_section" = true ]; then
+# 检查option remarks中是否有关键字
+if echo "$line" | grep -q "option remarks '$KEYWORD'"; then
+has_keyword=true
+fi
+
+# 如果找到关键字，检查附近的行是否有option address
+if [ "$has_keyword" = true ]; then
+if echo "$line" | grep -q "option address"; then
+# 替换option address的内容
+echo "$line" | sed "s/option address '.*'/option address '$BESTIP'/" >> "$temp_config"
+has_keyword=false # 重置关键字标志，防止重复替换
+else
+echo "$line" >> "$temp_config"
+fi
+else
+echo "$line" >> "$temp_config"
+fi
+else
+echo "$line" >> "$temp_config"
+fi
+done < "$passwall_file"
+
+# 替换原文件
+mv "$temp_config" "$passwall_file"
 echo "替换完成"
 
 # 删除测速结果文件并启动passwall
@@ -297,13 +330,41 @@ echo ${BESTIP} > $nowip_file
 echo -e "\n旧 IP 为 ${NOWIP}\n新 IP 为 ${BESTIP}\n"
 echo -e "开始替换..."
 
-# 读取nowip_hosts.txt文件中的内容并处理
+# 读取/etc/config/passwall文件并处理
 while IFS= read -r line; do
+# 检测到config nodes模块
+if echo "$line" | grep -q '^config nodes'; then
+in_nodes_section=true
+elif [ "$in_nodes_section" = true ] && echo "$line" | grep -q '^config'; then
+in_nodes_section=false
+fi
 
-# 替换/etc/config/passwall文件中的option address字段中的引号中的文本
-sed=$(sed -i "s/option address '.*'/option address '$line'/" "$passwall_file")
-$sed
-done < "$nowip_file"
+# 如果在config nodes模块内
+if [ "$in_nodes_section" = true ]; then
+# 检查option remarks中是否有关键字
+if echo "$line" | grep -q "option remarks '$KEYWORD'"; then
+has_keyword=true
+fi
+
+# 如果找到关键字，检查附近的行是否有option address
+if [ "$has_keyword" = true ]; then
+if echo "$line" | grep -q "option address"; then
+# 替换option address的内容
+echo "$line" | sed "s/option address '.*'/option address '$BESTIP'/" >> "$temp_config"
+has_keyword=false # 重置关键字标志，防止重复替换
+else
+echo "$line" >> "$temp_config"
+fi
+else
+echo "$line" >> "$temp_config"
+fi
+else
+echo "$line" >> "$temp_config"
+fi
+done < "$passwall_file"
+
+# 替换原文件
+mv "$temp_config" "$passwall_file"
 echo "替换完成"
 
 # 删除测速结果文件并启动passwall
