@@ -3,21 +3,21 @@
 #########可修改区开始#########
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-cstconfig=""
+cstconfig="-n 700 -url https://st.1275905.xyz/ -sl 20 -tl 240 -tll 45"
 # 检测国外连接参数
 word="google.com"
 # 检测国内连接参数
 home="baidu.com"
 # 检测节点是否在线
-JDURL="你的节点域名或ip"
+JDURL="1275905.xyz"
 # 定义目标文件夹
 target_dir="/etc/ip"
 # 定义文件路径
 nowip_file="nowip_hosts.txt"
 #定时修改
 task="*/10 * * * *"
-#passwall中节点名称关键字
-KEYWORD=""
+# 定义关键字
+KEYWORD="洛杉矶"
 
 ##########可修改区结束########
 
@@ -206,6 +206,16 @@ echo "节点在线"
 # 使用read命令读取输入，并设置超时时间为5秒
 echo "手动优选IP请按任意键"
 if read -t 5 -n 1; then
+
+# 检查关键字是否存在于文件中
+if grep -q "$KEYWORD" $passwall_file; then
+  echo "找到指定节点$KEYWORD 继续执行。"
+  echo "注意 如果节点名称不完全匹配则不会替换成功"
+else
+  echo "未找到指定节点名称 请检查是否有$KEYWORD名称节点 退出。"
+  exit 1
+fi
+
 echo "开始手动优选IP"
 
 # 检测是否有特定文件
@@ -301,6 +311,15 @@ fi
 attempt_word=$((attempt_word+1))
 done
 # 如果达到最大尝试次数仍未满足条件，则优选
+
+# 检查关键字是否存在于文件中
+if grep -q "$KEYWORD" $passwall_file; then
+  echo "找到指定节点$KEYWORD 继续执行。"
+  echo "注意 如果节点名称不完全匹配则不会替换成功"
+else
+  echo "未找到指定节点名称 请检查是否有$KEYWORD名称节点 退出。"
+  exit 1
+fi
 
 echo "国外网络异常 开始优选IP"
 
