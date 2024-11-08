@@ -17,7 +17,7 @@ nowip_file="nowip_hosts.txt"
 #定时修改
 task="*/10 * * * *"
 # 定义关键字
-KEYWORD="洛杉矶"
+KEYWORD="自建节点名称"
 
 ##########可修改区结束########
 
