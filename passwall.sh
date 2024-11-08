@@ -3,13 +3,13 @@
 #########可修改区开始#########
 
 # 这里可以自己添加、修改 CloudflareST 的运行参数
-cstconfig="-n 700 -url https://st.1275905.xyz/ -sl 20 -tl 240 -tll 45"
+cstconfig=""
 # 检测国外连接参数
 word="google.com"
 # 检测国内连接参数
 home="baidu.com"
 # 检测节点是否在线
-JDURL="1275905.xyz"
+JDURL="你的节点域名或ip"
 # 定义目标文件夹
 target_dir="/etc/ip"
 # 定义文件路径
