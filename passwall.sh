@@ -10,10 +10,15 @@ word="google.com"
 home="baidu.com"
 # 检测节点是否在线
 JDURL=""
+# 定义目标文件夹
+target_dir="/etc/ip"
+# 定义文件路径
+nowip_file="nowip_hosts.txt"
 #定时修改
 task="*/10 * * * *"
 # 定义关键字
-KEYWORD=""
+KEYWORD="洛杉矶"
+
 #########可修改区########
 
 # 初始化设置
@@ -24,8 +29,6 @@ trap 'rm -f "$temp_config"' EXIT
 passwall_file="/etc/config/passwall"
 START="/etc/init.d/passwall start"
 STOP="/etc/init.d/passwall stop"
-target_dir="/etc/ip"
-nowip_file="nowip_hosts.txt"
 script_name=$(basename "$0")
 script_path=$(cd "$(dirname "$0")" && pwd)/"$script_name"
 new_task="$task $sh $target_dir/$script_name"
