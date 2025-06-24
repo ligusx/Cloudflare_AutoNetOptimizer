@@ -16,8 +16,8 @@ target_dir="/etc/ip"
 nowip_file="nowip_hosts.txt"
 #定时修改
 task="*/10 * * * *"
-# 定义关键字
-KEYWORD="洛杉矶"
+# 节点关键字
+KEYWORD=""
 
 #########可修改区########
 
@@ -42,10 +42,15 @@ self_copy() {
         chmod +x "$target_dir/$script_name" && \
         echo "已复制脚本到 $target_dir/$script_name"
     fi
+    
+    # 复制到/usr/bin/cfst
+    if [ ! -f "/usr/bin/cfst" ] || ! cmp -s "$script_path" "/usr/bin/cfst"; then
+        cp -f "$script_path" "/usr/bin/cfst" && \
+        chmod +x "/usr/bin/cfst" && \
+        echo "已复制脚本到 /usr/bin/cfst，之后可直接在终端输入cfst运行此脚本。不用写路径"
+    fi
 }
 
-# 执行复制
-self_copy
 
 # 添加定时任务
 crontab -l 2>$NULL | grep -Fxq "$new_task" || {
