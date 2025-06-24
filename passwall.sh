@@ -50,7 +50,8 @@ self_copy() {
         echo "已复制脚本到 /usr/bin/cfst，之后可直接在终端输入cfst运行此脚本。不用写路径"
     fi
 }
-
+# 执行复制
+self_copy
 
 # 添加定时任务
 crontab -l 2>$NULL | grep -Fxq "$new_task" || {
