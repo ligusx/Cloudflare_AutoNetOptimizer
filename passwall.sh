@@ -29,21 +29,11 @@ STOP="/etc/init.d/passwall stop"
 script_name=$(basename "$0")
 script_path=$(cd "$(dirname "$0")" && pwd)/"$script_name"
 new_task="$task sh $target_dir/$script_name --auto"
-log_file="/var/log/cfst.log"
-log_max_size=1048576 # 1MB
-
-# 日志函数（带轮转）
-log() {
-    if [ -f "$log_file" ] && [ "$(stat -c%s "$log_file" 2>/dev/null)" -ge $log_max_size ]; then
-        mv "$log_file" "${log_file}"
-    fi
-    echo "[$(date '+%F %T')] $*" | tee -a "$log_file"
-}
 
 # 检查依赖并自动安装
 for cmd in curl ping awk sed pgrep; do
     if ! command -v $cmd >/dev/null 2>&1; then
-        log "缺少依赖: $cmd，尝试安装..."
+        echo "缺少依赖: $cmd，尝试安装..."
         pkg=$cmd
         case $cmd in
             ping)   pkg="iputils-ping" ;;      # 或 busybox 提供
@@ -51,7 +41,7 @@ for cmd in curl ping awk sed pgrep; do
             pgrep)  pkg="procps-ng-pgrep" ;;   # OpenWrt 提供 pgrep 的包
         esac
         opkg update
-        opkg install $pkg || { log "依赖 $cmd 安装失败，请手动安装"; exit 1; }
+        opkg install $pkg || { echo "依赖 $cmd 安装失败，请手动安装"; exit 1; }
     fi
 done
 
@@ -62,7 +52,7 @@ self_copy() {
     for dest in "$target_dir/$script_name" "/usr/bin/cfst"; do
         if [ ! -f "$dest" ] || ! cmp -s "$script_path" "$dest"; then
             cp -f "$script_path" "$dest" && chmod +x "$dest"
-            log "已复制脚本到 $dest"
+            echo "已复制脚本到 $dest"
         fi
     done
 }
@@ -71,7 +61,7 @@ self_copy
 # 添加定时任务（仅第一次）
 crontab -l 2>$NULL | grep -Fxq "$new_task" || {
     (crontab -l 2>$NULL || true; echo "$new_task") | crontab -
-    log "已添加定时任务：$new_task"
+    echo "已添加定时任务：$new_task"
 }
 
 cd "$target_dir" || exit 1
@@ -79,7 +69,7 @@ cd "$target_dir" || exit 1
 # 检查 passwall 状态
 check_passwall_status() {
     if ! pgrep -f "passwall" >$NULL || { [ -f "$passwall_file" ] && grep -q "option enabled '0'" "$passwall_file"; }; then
-        log "Passwall 未运行或未启用，退出脚本"
+        echo "Passwall 未运行或未启用，退出脚本"
         exit 1
     fi
 }
@@ -88,18 +78,18 @@ check_passwall_status
 # 国内/节点检测
 check_network() {
     local ping_home=$(ping -c 3 -i 1 -W 2 $home 2>$NULL | grep -c 'bytes from')
-    [ "$ping_home" -lt 2 ] && { log "国内网络异常，退出"; exit 0; }
-    log "国内网络正常"
+    [ "$ping_home" -lt 2 ] && { echo "国内网络异常，退出"; exit 0; }
+    echo "国内网络正常"
 
     local fail=0
     for i in $(seq 1 3); do
         if ! curl -s -m 5 -o $NULL -w "%{http_code}" "$JDURL" | grep -qE '^(200|301)$'; then
             fail=$((fail+1))
-            [ $fail -ge 2 ] && { log "节点离线，退出"; exit 1; }
+            [ $fail -ge 2 ] && { echo "节点离线，退出"; exit 1; }
         fi
         sleep 1
     done
-    log "节点在线"
+    echo "节点在线"
 }
 check_network
 
@@ -107,12 +97,12 @@ check_network
 check_foreign() {
     for i in $(seq 1 3); do
         if curl -s -m 5 -o $NULL -w "%{http_code}" "$word" | grep -qE '^(200|301)$'; then
-            log "国外网络正常，退出"
+            echo "国外网络正常，退出"
             exit 0
         fi
         sleep 1
     done
-    log "国外网络异常，开始优选 IP"
+    echo "国外网络异常，开始优选 IP"
 }
 
 # 下载 CloudflareST
@@ -130,14 +120,14 @@ download_cfst() {
             [ "$ARCH" = "x86_64" ] && FILE_NAME="CloudflareST_darwin_amd64.tar.gz"
             [ "$ARCH" = "arm64" ] && FILE_NAME="CloudflareST_darwin_arm64.tar.gz"
             ;;
-        *) log "不支持的操作系统: $OS"; exit 1 ;;
+        *) echo "不支持的操作系统: $OS"; exit 1 ;;
     esac
 
-    [ -z "$FILE_NAME" ] && { log "不支持的架构: $ARCH"; exit 1; }
+    [ -z "$FILE_NAME" ] && { echo "不支持的架构: $ARCH"; exit 1; }
 
-    log "正在下载 CloudflareST..."
+    echo "正在下载 CloudflareST..."
     if ! curl -sSL -o "${FILE_NAME}" "${BASE_URL}/${FILE_NAME}" || ! tar -xzf "${FILE_NAME}"; then
-        log "下载或解压失败"
+        echo "下载或解压失败"
         exit 1
     fi
     rm -f "${FILE_NAME}" "cfst_hosts.sh" "使用+错误+反馈说明.txt"
@@ -160,38 +150,38 @@ process_ip_selection() {
     ./CloudflareST $cstconfig
 
     BESTIP=$(awk -F, 'NR==2{print $1; exit}' result.csv 2>$NULL)
-    [ -z "$BESTIP" ] && { log "未获取到 IP，恢复运行"; $START; exit 0; }
+    [ -z "$BESTIP" ] && { echo "未获取到 IP，恢复运行"; $START; exit 0; }
 
     # IP 格式校验
     if ! echo "$BESTIP" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$|:'; then
-        log "无效 IP: $BESTIP"
+        echo "无效 IP: $BESTIP"
         $START
         exit 1
     fi
 
     echo "$BESTIP" > "$nowip_file"
-    log "旧 IP: ${NOWIP:-无} → 新 IP: ${BESTIP}"
+    echo "旧 IP: ${NOWIP:-无} → 新 IP: ${BESTIP}"
 
     replace_ip "$KEYWORD" "$BESTIP"
     rm -f result.csv
     $START
-    log "替换完成，Passwall 已重启"
+    echo "替换完成，Passwall 已重启"
 }
 
 # 手动/自动模式
 manual_select() {
     if [ "$1" = "--auto" ]; then
         check_foreign
-        grep -q "$KEYWORD" $passwall_file || { log "未找到节点 $KEYWORD"; exit 1; }
+        grep -q "$KEYWORD" $passwall_file || { echo "未找到节点 $KEYWORD"; exit 1; }
         process_ip_selection
     else
-        log "手动优选：5 秒内按任意键触发"
+        echo "手动优选：5 秒内按任意键触发"
         if read -t 5 -n 1; then
-            grep -q "$KEYWORD" $passwall_file || { log "未找到节点 $KEYWORD"; exit 1; }
+            grep -q "$KEYWORD" $passwall_file || { echo "未找到节点 $KEYWORD"; exit 1; }
             process_ip_selection
         else
             check_foreign
-            grep -q "$KEYWORD" $passwall_file || { log "未找到节点 $KEYWORD"; exit 1; }
+            grep -q "$KEYWORD" $passwall_file || { echo "未找到节点 $KEYWORD"; exit 1; }
             process_ip_selection
         fi
     fi
