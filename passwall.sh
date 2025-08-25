@@ -75,28 +75,41 @@ check_passwall_status() {
 }
 check_passwall_status
 
-# 国内/节点检测
+## 国内/节点检测
 check_network() {
-    local ping_home=$(ping -c 3 -i 1 -W 2 $home 2>$NULL | grep -c 'bytes from')
-    [ "$ping_home" -lt 2 ] && { echo "国内网络异常，退出"; exit 0; }
+    # ------------------------
+    # 国内网络检测 (至少成功 2 次才算正常)
+    # ------------------------
+    if ! ping -c 3 -W 2 "$home" >/dev/null 2>&1; then
+        echo "国内网络异常，退出"
+        exit 0
+    fi
     echo "国内网络正常"
 
+    # ------------------------
+    # 节点在线检测 (允许 1 次失败)
+    # ------------------------
     local fail=0
-    for i in $(seq 1 3); do
-        if ! curl -s -m 5 -o $NULL -w "%{http_code}" "$JDURL" | grep -qE '^(200|301)$'; then
+    for i in 1 2 3; do
+        http_code=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "$JDURL")
+        if [ "$http_code" != "200" ] && [ "$http_code" != "301" ]; then
             fail=$((fail+1))
             [ $fail -ge 2 ] && { echo "节点离线，退出"; exit 1; }
+        else
+            echo "节点在线"
+            return 0
         fi
         sleep 1
     done
-    echo "节点在线"
 }
+
 check_network
 
 # 国外检测
 check_foreign() {
-    for i in $(seq 1 3); do
-        if curl -s -m 5 -o $NULL -w "%{http_code}" "$word" | grep -qE '^(200|301)$'; then
+    for i in 1 2 3; do
+        http_code=$(curl -s -m 5 -o /dev/null -w "%{http_code}" "$word")
+        if [ "$http_code" = "200" ] || [ "$http_code" = "301" ] || [ "$http_code" = "204" ]; then
             echo "国外网络正常，退出"
             exit 0
         fi
@@ -134,7 +147,7 @@ download_cfst() {
 }
 [ -f "CloudflareST" ] || download_cfst
 
-# IP 替换函数（去掉自动备份）
+# IP 替换函数
 replace_ip() {
     local keyword=$1 bestip=$2
     sed -i "/option remarks '$keyword'/,/option address/ {
